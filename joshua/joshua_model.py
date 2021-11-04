@@ -669,8 +669,11 @@ def should_run_ensemble(tr: fdb.Transaction, ensemble_id: str) -> bool:
             tr.add_read_conflict_key(
                 dir_ensemble_incomplete[ensemble_id]["heartbeat"][max_seed]
             )
-            del tr[dir_ensemble_incomplete[ensemble_id][max_seed].range()]
-            del tr[dir_ensemble_incomplete[ensemble_id]["heartbeat"][max_seed]]
+
+            if tr[dir_ensemble_incomplete[ensemble_id]["heartbeat"][max_seed]]:
+                _decrement(tr, ensemble_id, "started")
+                del tr[dir_ensemble_incomplete[ensemble_id][max_seed].range()]
+                del tr[dir_ensemble_incomplete[ensemble_id]["heartbeat"][max_seed]]
             return True
         return False
     else:
@@ -991,14 +994,3 @@ def get_agent_failures(tr, time_start=None, time_end=None):
         failures.append((info, msg))
 
     return failures
-
-@transactional
-def cancel_agent_cleanup(tr, ensemble_id):
-    """
-    Clean-up method for when an agent takes a job but gets cancelled
-    """
-
-    # TODO(qhoang) let's try this but there must be a better way
-    # When an agent is cancelled, it has already incremented the __started__ counter
-    # but will never get to increment the __ended__ counter
-    _decrement(tr, ensemble_id, "started")

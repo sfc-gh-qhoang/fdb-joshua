@@ -540,7 +540,6 @@ class AsyncEnsemble:
         if retcode == -1:
             # no results to record when cancelled
             self._retcode = retcode
-            joshua_model.cancel_agent_cleanup(ensemble)
             return
 
         try:
